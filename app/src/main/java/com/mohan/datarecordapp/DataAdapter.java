@@ -33,7 +33,6 @@ public class DataAdapter extends RecyclerView.Adapter<DataAdapter.ViewHolder> {
     public void onBindViewHolder(ViewHolder holder, int position) {
         String[] gpsData = list.get(position);
         Log.e("Mohan", "gpsData :" + gpsData[0]);
-        Log.e("Mohan", "gpsLength :" + gpsData.length);
         holder.textView.setText(gpsData[0]);
     }
 

@@ -29,7 +29,7 @@ public class GPSData implements Parcelable {
     private int mSpeed;
     private double mAltitude;
 
-    GPSData(float xAxis, float yAxis, float zAxis, String timeStamp, int accuracy,
+    public GPSData(float xAxis, float yAxis, float zAxis, String timeStamp, int accuracy,
             int heading, double latitude, int speed, double altitude, double longitude) {
         mXaxis = xAxis;
         mYaxis = yAxis;
@@ -93,11 +93,11 @@ public class GPSData implements Parcelable {
             sb.append(mLongitude);
         }
         if (DataValidator.isValidData(mAccuracy)) {
-            sb.append("; acc=");
+            sb.append("; accuracy=");
             sb.append(mAccuracy);
         }
         if (DataValidator.isValidData(mHeading)) {
-            sb.append("; hea=");
+            sb.append("; bearing=");
             sb.append(mHeading);
         }
         if (DataValidator.isValidData(mSpeed)) {

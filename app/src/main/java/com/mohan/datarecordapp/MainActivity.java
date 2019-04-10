@@ -1,17 +1,18 @@
 package com.mohan.datarecordapp;
 
+import static com.google.android.gms.location.LocationServices.*;
+import static com.google.android.gms.location.LocationServices.FusedLocationApi;
+
 import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
-import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
@@ -33,9 +34,6 @@ import com.mohan.datarecordapp.data.AccelerometerData;
 import com.mohan.datarecordapp.data.GPSLocationData;
 import com.mohan.datarecordapp.datamonitoring.DataFactory;
 import com.mohan.datarecordapp.datamonitoring.DataMonitorEventCatcher;
-import com.mohan.datarecordapp.service.LocationService;
-import com.mohan.datarecordapp.utils.ServiceLifeCycle;
-import com.mohan.datarecordapp.utils.Utils;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,7 +44,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
+public class MainActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener,
         com.google.android.gms.location.LocationListener {
     private static final String TAG = "MainActivity";
@@ -58,43 +56,32 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
     private RecyclerView mRecyclerView;
     private List<String[]> mResultDataList;
     private DataLoaderAsyncTask mDataLoaderAsyncTask;
-    private DataAdapter mDataAdapter;
     private boolean isRunning = true;
     private boolean isStarted = false;
     private GoogleApiClient mGoogleApiClient;
     private Location mLocation;
     private LocationManager mLocationManager;
 
-    private LocationRequest mLocationRequest;
     private com.google.android.gms.location.LocationListener listener;
     private long UPDATE_INTERVAL = 2 * 1000;  /* 10 secs */
     private long FASTEST_INTERVAL = 2000; /* 2 sec */
-
-    @Override
-    public void startService() {
-        startService(new Intent(this, LocationService.class));
-    }
-
-    @Override
-    public void stopService() {
-        stopService(new Intent(this, LocationService.class));
-    }
+    private LocationRequest mLocationRequest;
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
+       mLocationRequest = LocationRequest.create();
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        mLocationRequest.setInterval(5000);
+        mLocationRequest.setFastestInterval(3000);
+        int permissionCheck = ContextCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_FINE_LOCATION);
+        if (permissionCheck != PackageManager.PERMISSION_GRANTED) {
+            // ask permissions here using below code
+            ActivityCompat.requestPermissions(this,
+                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                    100);
         }
 
-        startLocationUpdates();
-
-        mLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-
-        if (mLocation == null) {
-            startLocationUpdates();
-        }
     }
 
     @Override
@@ -110,28 +97,14 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
 
     @Override
     public void onLocationChanged(Location location) {
+        Log.e("Mohan", "OnLocationChanged : " + location.getLatitude() + "Longitude"
+                + location.getLongitude());
         new DataFactory(mLocation);
     }
 
     @Override
     public void onPointerCaptureChanged(boolean hasCapture) {
 
-    }
-
-    protected void startLocationUpdates() {
-        // Create the location request
-        mLocationRequest = LocationRequest.create()
-                .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-                .setInterval(UPDATE_INTERVAL)
-                .setFastestInterval(FASTEST_INTERVAL);
-        // Request location updates
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
-                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            return;
-        }
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
-                mLocationRequest, this);
     }
 
     @Override
@@ -143,7 +116,6 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
         enableGPS();
         initilizeView();
         actionUI();
-
         checkWritePermission();
     }
 
@@ -168,7 +140,6 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
         super.onDestroy();
         mAccelerometerData.unRegisterListener();
         mDataLoaderAsyncTask.cancel(true);
-        stopService();
     }
 
     @Override
@@ -181,6 +152,44 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
     protected void onResume() {
         super.onResume();
         mAccelerometerData.registerSensorLister();
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+            String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case 100: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    if (ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_FINE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED
+                            && ActivityCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_COARSE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                        // TODO: Consider calling
+                        //    ActivityCompat#requestPermissions
+                        // here to request the missing permissions, and then overriding
+                        //   public void onRequestPermissionsResult(int requestCode, String[]
+                        // permissions,
+                        //                                          int[] grantResults)
+                        // to handle the case where the user grants the permission. See the
+                        // documentation
+                        // for ActivityCompat#requestPermissions for more details.
+                        return;
+                    }
+                    FusedLocationApi.requestLocationUpdates(mGoogleApiClient,
+                            mLocationRequest,
+                            this);
+
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
     }
 
     protected void makeRequest() {
@@ -200,6 +209,11 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
         mRecyclerView.setItemAnimator(new DefaultItemAnimator());
     }
 
+    /**
+     * Read  data csv file and shoe it on the list
+     *
+     * @param path : /storage/emulated/0/gpsdata.csv
+     */
     private String[] readFileData(String path) throws FileNotFoundException {
         String[] data = new String[0];
         File file = new File(path);
@@ -221,16 +235,12 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
         return data;
     }
 
-
     private void init() {
         new GPSLocationData(mLocation);
-        mDataLoaderAsyncTask = new DataLoaderAsyncTask();
-        mResultDataList = new ArrayList<>();
-        if (!Utils.isServiceRunning(LocationService.class.getName())) {
-            startService();
-        }
         mDataMonitorEventCatcher = new DataMonitorEventCatcher();
         mAccelerometerData = new AccelerometerData();
+        mDataLoaderAsyncTask = new DataLoaderAsyncTask();
+        mResultDataList = new ArrayList<>();
     }
 
     private void checkWritePermission() {
@@ -300,17 +310,19 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
+                .addApi(API)
                 .build();
         mLocationManager = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
 
         mLocation = getLastKnownLocation();
+        new DataFactory(mLocation);
     }
 
     private Location getLastKnownLocation() {
-        mLocationManager = (LocationManager) getApplicationContext().getSystemService(
-                LOCATION_SERVICE);
-        List<String> providers = mLocationManager.getProviders(true);
+        boolean isGPSEnabled = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        Log.e("Mohan", "isGPSEnabled : " + isGPSEnabled);
+        List<String> providers = mLocationManager.getProviders(isGPSEnabled);
+        Log.e("Mohan", "Permissino providers " + providers.size());
         Location bestLocation = null;
         for (String provider : providers) {
             if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -327,41 +339,6 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
             }
         }
         return bestLocation;
-    }
-
-    private boolean checkLocation() {
-        if (!isLocationEnabled()) {
-            showAlert();
-        }
-        return isLocationEnabled();
-    }
-
-    private void showAlert() {
-        final AlertDialog.Builder dialog = new AlertDialog.Builder(this);
-        dialog.setTitle("Enable Location")
-                .setMessage("Your Locations Settings is set to 'Off'.\nPlease Enable Location to " +
-                        "use this app")
-                .setPositiveButton("Location Settings", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
-
-                        Intent myIntent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                        startActivity(myIntent);
-                    }
-                })
-                .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface paramDialogInterface, int paramInt) {
-
-                    }
-                });
-        dialog.show();
-    }
-
-    private boolean isLocationEnabled() {
-        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        return mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
-                mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
     }
 
     private class DataLoaderAsyncTask extends AsyncTask<String, String, String[]> {
@@ -398,8 +375,8 @@ public class MainActivity extends AppCompatActivity implements ServiceLifeCycle,
                 mResultDataList.clear();
             }
             isRunning = true;
-            mDataAdapter = new DataAdapter(mResultDataList, getApplicationContext());
-            mRecyclerView.setAdapter(mDataAdapter);
+            DataAdapter dataAdapter = new DataAdapter(mResultDataList, getApplicationContext());
+            mRecyclerView.setAdapter(dataAdapter);
         }
     }
 }

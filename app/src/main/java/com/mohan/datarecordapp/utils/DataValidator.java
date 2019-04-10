@@ -7,10 +7,10 @@ import com.mohan.datarecordapp.datamonitoring.GPSData;
 public class DataValidator {
 
     public static final String DEFAULT_STRING = null;
-    public static final int DEFAULT_INT = Integer.MIN_VALUE;
-    public static final double DEFAULT_DOUBLE = Double.MIN_VALUE;
-    public static final float DEFAULT_FLOAT = Float.MIN_VALUE;
-    public static final short DEFAULT_SHORT = Short.MIN_VALUE;
+    private static final int DEFAULT_INT = Integer.MIN_VALUE;
+    private static final double DEFAULT_DOUBLE = Double.MIN_VALUE;
+    private static final float DEFAULT_FLOAT = Float.MIN_VALUE;
+    private static final short DEFAULT_SHORT = Short.MIN_VALUE;
 
 
     public static boolean isValidData(String data) {

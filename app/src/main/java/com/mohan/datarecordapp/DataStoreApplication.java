@@ -31,7 +31,6 @@ public class DataStoreApplication extends Application {
     public void onCreate() {
         super.onCreate();
         mApplicationInstance = this;
-        dataMonitoringCanStart();
         Log.d(TAG, "mApplicationInstance : " + mApplicationInstance);
     }
 }

@@ -1,6 +1,7 @@
 package com.mohan.datarecordapp.datamonitoring;
 
 import android.location.Location;
+import android.util.Log;
 
 import com.mohan.datarecordapp.data.AccelerometerData;
 import com.mohan.datarecordapp.data.GPSLocationData;
@@ -17,11 +18,12 @@ public class DataFactory {
             "yyyy-MM-dd'T'HH:mm:ssZ", Locale.getDefault());
 
     private static GPSLocationData mGPSLocationData;
-    private static AccelerometerData mAccelerometerData;
+    private static AccelerometerData mAccelerometerData = new AccelerometerData();;
 
     public DataFactory(Location location) {
         mGPSLocationData = new GPSLocationData(location);
-        mAccelerometerData = new AccelerometerData();
+        Log.e("Mohan", "DataFactory : " + location.getLatitude() + "Longitude"
+                + location.getLongitude());
     }
 
     static GPSData buildData() {
@@ -30,7 +32,7 @@ public class DataFactory {
         float zAxis = mAccelerometerData.getZaxis();
         String timeStamp = retrieveSystemTimestamp();
         int accuracy = mGPSLocationData.getAccuracy();
-        int heading = mGPSLocationData.getHeading();
+        int heading = mGPSLocationData.getBearing();
         double latitude = mGPSLocationData.getLatitude();
         double longitude = mGPSLocationData.getLongitude();
         int speed = mGPSLocationData.getSpeed();

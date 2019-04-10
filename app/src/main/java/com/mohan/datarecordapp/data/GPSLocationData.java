@@ -73,7 +73,7 @@ public class GPSLocationData {
      *
      * @return GPS heading
      */
-    public int getHeading() {
+    public int getBearing() {
         return mLocation == null ? Integer.MIN_VALUE
                 : (int) calculateBearingData();
     }
